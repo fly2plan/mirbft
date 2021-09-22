@@ -424,7 +424,7 @@ func (et *epochTarget) repeatEpochChangeBroadcast() *ActionList {
 }
 
 func (et *epochTarget) tickPrepending() *ActionList {
-	if et.myNewEpoch == nil {
+	if et.myEpochChange != nil && et.myNewEpoch == nil {
 		if et.stateTicks%uint64(et.myConfig.NewEpochTimeoutTicks/2) == 0 {
 			return et.repeatEpochChangeBroadcast()
 		}
@@ -432,7 +432,7 @@ func (et *epochTarget) tickPrepending() *ActionList {
 		return &ActionList{}
 	}
 
-	if et.isPrimary {
+	if et.myNewEpoch != nil && et.isPrimary {
 		return (&ActionList{}).Send(
 			et.networkConfig.Nodes,
 			&msgs.Msg{
@@ -448,34 +448,36 @@ func (et *epochTarget) tickPrepending() *ActionList {
 
 func (et *epochTarget) tickPending() *ActionList {
 	pendingTicks := et.stateTicks % uint64(et.myConfig.NewEpochTimeoutTicks)
-	if et.isPrimary {
-		// resend the new-view if others perhaps missed it
-		if pendingTicks%2 == 0 {
-			return (&ActionList{}).Send(
-				et.networkConfig.Nodes,
-				&msgs.Msg{
-					Type: &msgs.Msg_NewEpoch{
-						NewEpoch: et.myNewEpoch,
+	if et.myNewEpoch != nil {
+		if et.isPrimary {
+			// resend the new-view if others perhaps missed it
+			if pendingTicks%2 == 0 {
+				return (&ActionList{}).Send(
+					et.networkConfig.Nodes,
+					&msgs.Msg{
+						Type: &msgs.Msg_NewEpoch{
+							NewEpoch: et.myNewEpoch,
+						},
 					},
-				},
-			)
-		}
-	} else {
-		if pendingTicks == 0 {
-			suspect := &msgs.Suspect{
-				Epoch: et.myNewEpoch.NewConfig.Config.Number,
+				)
 			}
-			return (&ActionList{}).Send(
-				et.networkConfig.Nodes,
-				&msgs.Msg{
-					Type: &msgs.Msg_Suspect{
-						Suspect: suspect,
+		} else {
+			if pendingTicks == 0 {
+				suspect := &msgs.Suspect{
+					Epoch: et.myNewEpoch.NewConfig.Config.Number,
+				}
+				return (&ActionList{}).Send(
+					et.networkConfig.Nodes,
+					&msgs.Msg{
+						Type: &msgs.Msg_Suspect{
+							Suspect: suspect,
+						},
 					},
-				},
-			).concat(et.persisted.addSuspect(suspect))
-		}
-		if pendingTicks%2 == 0 {
-			return et.repeatEpochChangeBroadcast()
+				).concat(et.persisted.addSuspect(suspect))
+			}
+			if pendingTicks%2 == 0 {
+				return et.repeatEpochChangeBroadcast()
+			}
 		}
 	}
 	return &ActionList{}
