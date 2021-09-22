@@ -71,7 +71,7 @@ func (ct *checkpointTracker) reinitialize() {
 				ct.networkConfig = cEntry.NetworkState.Config
 			}
 			cp := ct.checkpoint(cEntry.SeqNo)
-			cp.applyCheckpointMsg(nodeID(ct.myConfig.Id), cEntry.CheckpointValue)
+			cp.stable = true
 			ct.activeCheckpoints.PushBack(cp)
 		},
 	})
