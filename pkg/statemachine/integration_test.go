@@ -17,7 +17,7 @@ import (
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
-	. "github.com/hyperledger-labs/mirbft/pkg/testengine"
+	. "github.com/fly2plan/mirbft/pkg/testengine"
 )
 
 type Occurred int
