@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/hyperledger-labs/mirbft/pkg/statemachine"
+	"github.com/fly2plan/mirbft/pkg/statemachine"
 )
 
 type NamedLogger struct {

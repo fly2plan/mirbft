@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/hyperledger-labs/mirbft/pkg/testengine"
+	"github.com/fly2plan/mirbft/pkg/testengine"
 )
 
 var _ = Describe("Recorder", func() {
