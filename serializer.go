@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package mirbft
 
 import (
-	"github.com/hyperledger-labs/mirbft/pkg/statemachine"
+	"github.com/fly2plan/mirbft/pkg/statemachine"
 )
 
 // TODO, add assertion in tests that log levels match

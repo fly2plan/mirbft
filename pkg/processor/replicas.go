@@ -7,8 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package processor
 
 import (
+	"github.com/fly2plan/mirbft/pkg/statemachine"
 	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
-	"github.com/hyperledger-labs/mirbft/pkg/statemachine"
 )
 
 type Replicas struct {

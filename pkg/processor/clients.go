@@ -13,9 +13,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/fly2plan/mirbft/pkg/statemachine"
 	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
 	"github.com/hyperledger-labs/mirbft/pkg/pb/state"
-	"github.com/hyperledger-labs/mirbft/pkg/statemachine"
 )
 
 var ErrClientNotExist error = errors.New("client does not exist")
