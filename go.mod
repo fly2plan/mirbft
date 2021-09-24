@@ -1,4 +1,4 @@
-module github.com/hyperledger-labs/mirbft
+module github.com/fly2plan/mirbft
 
 go 1.15
 
