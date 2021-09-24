@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
-	"github.com/hyperledger-labs/mirbft"
+	"github.com/fly2plan/mirbft"
 	"github.com/hyperledger-labs/mirbft/pkg/eventlog"
 	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
 	"github.com/hyperledger-labs/mirbft/pkg/reqstore"
