@@ -73,6 +73,7 @@ func IntializeWALForNewNode(
 	runtimeParms *state.EventInitialParameters,
 	initialNetworkState *msgs.NetworkState,
 	initialCheckpointValue []byte,
+	atGenesis bool,
 ) (*statemachine.EventList, error) {
 	entries := []*msgs.Persistent{
 		{
@@ -84,16 +85,34 @@ func IntializeWALForNewNode(
 				},
 			},
 		},
-		{
-			Type: &msgs.Persistent_FEntry{
-				FEntry: &msgs.FEntry{
-					EndsEpochConfig: &msgs.EpochConfig{
-						Number:  0,
-						Leaders: initialNetworkState.Config.Nodes,
+	}
+	if atGenesis {
+		entries = append(entries,
+			&msgs.Persistent{
+				Type: &msgs.Persistent_FEntry{
+					FEntry: &msgs.FEntry{
+						EndsEpochConfig: &msgs.EpochConfig{
+							Number:  0,
+							Leaders: initialNetworkState.Config.Nodes,
+						},
 					},
 				},
 			},
-		},
+		)
+	} else {
+		entries = append(entries,
+			&msgs.Persistent{
+				Type: &msgs.Persistent_NEntry{
+					NEntry: &msgs.NEntry{
+						SeqNo: 1,
+						EpochConfig: &msgs.EpochConfig{
+							Number:  0,
+							Leaders: initialNetworkState.Config.Nodes,
+						},
+					},
+				},
+			},
+		)
 	}
 
 	events := &statemachine.EventList{}
@@ -108,7 +127,7 @@ func IntializeWALForNewNode(
 	events.CompleteInitialization()
 
 	if err := wal.Sync(); err != nil {
-		return nil, errors.WithMessage(err, "failted to sync WAL")
+		return nil, errors.WithMessage(err, "failed to sync WAL")
 	}
 	return events, nil
 }

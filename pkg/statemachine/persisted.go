@@ -156,6 +156,16 @@ func (p *persisted) addTEntry(tEntry *msgs.TEntry) *ActionList {
 	return p.appendLogEntry(d)
 }
 
+func (p *persisted) addFEntry(fEntry *msgs.FEntry) *ActionList {
+	d := &msgs.Persistent{
+		Type: &msgs.Persistent_FEntry{
+			FEntry: fEntry,
+		},
+	}
+
+	return p.appendLogEntry(d)
+}
+
 func (p *persisted) truncate(lowWatermark uint64) *ActionList {
 	for logEntry := p.logHead; logEntry != nil; logEntry = logEntry.next {
 		switch d := logEntry.entry.Type.(type) {

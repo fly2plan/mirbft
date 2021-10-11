@@ -215,6 +215,11 @@ func (sm *StateMachine) applyEvent(stateEvent *state.Event) *ActionList {
 
 		sm.Logger.Log(LevelDebug, "state transfer completed", "seq_no", event.StateTransferComplete.SeqNo)
 
+		if sm.commitState.activeState.Reconfigured {
+			event.StateTransferComplete.NetworkState.Reconfigured = true
+			event.StateTransferComplete.NetworkState.PendingReconfigurations = nil
+		}
+
 		actions.concat(sm.persisted.addCEntry(&msgs.CEntry{
 			SeqNo:           event.StateTransferComplete.SeqNo,
 			CheckpointValue: event.StateTransferComplete.CheckpointValue,

@@ -8,6 +8,7 @@ package statemachine
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
 	"github.com/hyperledger-labs/mirbft/pkg/pb/state"
@@ -202,7 +203,35 @@ func (et *epochTracker) reinitialize() *ActionList {
 		// XXX this leader selection is wrong, but using while we modify the startup.
 		// instead base it on the lastEpochConfig and whether that epoch ended gracefully.
 		_, _ = lastEpochConfig, graceful
-		et.currentEpoch.myLeaderChoice = et.networkConfig.Nodes
+		if graceful {
+			if et.commitState.activeState.Reconfigured {
+				et.currentEpoch.myLeaderChoice = lastEpochConfig.Leaders
+				et.commitState.activeState.Reconfigured = false
+			} else {
+				potentialLeaders := make([]uint64, len(et.networkConfig.Nodes))
+				copy(potentialLeaders, et.networkConfig.Nodes)
+
+				for i, node := range et.networkConfig.Nodes {
+					j := sort.Search(len(lastEpochConfig.Leaders),
+						func(j int) bool { return lastEpochConfig.Leaders[j] >= node })
+					if j < len(lastEpochConfig.Leaders) && lastEpochConfig.Leaders[j] == node {
+						potentialLeaders[i] = 0
+					}
+				}
+
+				newLeaders := []uint64{}
+				for i := range potentialLeaders {
+					if potentialLeaders[i] > 0 {
+						newLeaders = append(newLeaders, potentialLeaders[i])
+						break
+					}
+				}
+
+				et.currentEpoch.myLeaderChoice = append(lastEpochConfig.Leaders, newLeaders...)
+			}
+		}
+
+		et.needsStateTransfer = false
 	default:
 		// There's no active epoch, it did not end gracefully, or ungracefully
 		panic("no recorded active epoch, ended epoch, or epoch change in log")
@@ -218,6 +247,8 @@ func (et *epochTracker) reinitialize() *ActionList {
 }
 
 func (et *epochTracker) advanceState() *ActionList {
+	actions := &ActionList{}
+
 	if et.currentEpoch.state < etDone {
 		return et.currentEpoch.advanceState()
 	}
@@ -225,7 +256,11 @@ func (et *epochTracker) advanceState() *ActionList {
 	if et.commitState.checkpointPending {
 		// It simplifies our lives considerably to wait for checkpoints
 		// before initiating epoch change.
-		return &ActionList{}
+		return actions
+	}
+
+	if et.needsStateTransfer {
+		return actions
 	}
 
 	newEpochNumber := et.currentEpoch.number + 1
@@ -236,6 +271,54 @@ func (et *epochTracker) advanceState() *ActionList {
 
 	myEpochChange, err := newParsedEpochChange(epochChange)
 	assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
+
+	lastCheckpoint := myEpochChange.underlying.Checkpoints[len(myEpochChange.underlying.Checkpoints)-1]
+
+	switch lastCheckpoint.SeqNo {
+	case et.currentEpoch.activeEpoch.epochConfig.PlannedExpiration:
+		fallthrough
+	case et.currentEpoch.commitState.stopAtSeqNo:
+		actions.concat(et.persisted.addFEntry(&msgs.FEntry{
+			EndsEpochConfig: et.currentEpoch.networkNewEpoch.Config,
+		}))
+	}
+
+	if et.commitState.activeState.Reconfigured {
+		et.needsStateTransfer = true
+		return actions.concat(et.commitState.transferTo(lastCheckpoint.SeqNo, lastCheckpoint.Value))
+	}
+
+	myLeaderChoice := make([]uint64, 0)
+	if et.currentEpoch.networkNewEpoch != nil {
+		if len(et.currentEpoch.networkNewEpoch.Config.Leaders) < len(et.networkConfig.Nodes) {
+			lastEpochConfig := et.currentEpoch.networkNewEpoch.Config
+			potentialLeaders := make([]uint64, len(et.networkConfig.Nodes))
+			copy(potentialLeaders, et.networkConfig.Nodes)
+
+			for i, node := range et.networkConfig.Nodes {
+				j := sort.Search(len(lastEpochConfig.Leaders),
+					func(j int) bool { return lastEpochConfig.Leaders[j] >= node })
+				if j < len(lastEpochConfig.Leaders) && lastEpochConfig.Leaders[j] == node {
+					potentialLeaders[i] = 0
+				}
+			}
+
+			newLeaders := []uint64{}
+			for i := range potentialLeaders {
+				if potentialLeaders[i] > 0 {
+					newLeaders = append(newLeaders, potentialLeaders[i])
+					break
+				}
+			}
+
+			et.currentEpoch.myLeaderChoice = append(lastEpochConfig.Leaders, newLeaders...)
+			leaderChoice := make([]uint64, len(et.currentEpoch.myLeaderChoice))
+			copy(leaderChoice, et.currentEpoch.myLeaderChoice)
+			myLeaderChoice = append(myLeaderChoice, leaderChoice...)
+		} else {
+			myLeaderChoice = append(myLeaderChoice, et.currentEpoch.networkNewEpoch.Config.Leaders...)
+		}
+	}
 
 	et.currentEpoch = newEpochTarget(
 		newEpochNumber,
@@ -250,9 +333,9 @@ func (et *epochTracker) advanceState() *ActionList {
 		et.logger,
 	)
 	et.currentEpoch.myEpochChange = myEpochChange
-	et.currentEpoch.myLeaderChoice = []uint64{et.myConfig.Id} // XXX, wrong
+	et.currentEpoch.myLeaderChoice = myLeaderChoice // XXX, wrong
 
-	actions := et.persisted.addECEntry(&msgs.ECEntry{
+	actions.concat(et.persisted.addECEntry(&msgs.ECEntry{
 		EpochNumber: newEpochNumber,
 	}).Send(
 		et.networkConfig.Nodes,
@@ -261,7 +344,7 @@ func (et *epochTracker) advanceState() *ActionList {
 				EpochChange: epochChange,
 			},
 		},
-	)
+	))
 
 	for _, id := range et.networkConfig.Nodes {
 		et.futureMsgs[nodeID(id)].iterate(et.filter, func(source nodeID, msg *msgs.Msg) {

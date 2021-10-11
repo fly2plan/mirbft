@@ -127,6 +127,11 @@ func (cs *commitState) applyCheckpointResult(epochConfig *msgs.EpochConfig, resu
 		cs.stopAtSeqNo = result.SeqNo + 2*ci
 	} else {
 		cs.logger.Log(LevelDebug, "checkpoint result has pending reconfigurations, not extending stop", "stop_at_seq_no", cs.stopAtSeqNo)
+		if cs.stopAtSeqNo == result.SeqNo {
+			cs.activeState.Reconfigured = true
+			result.NetworkState.Reconfigured = true
+			result.NetworkState.PendingReconfigurations = nil
+		}
 	}
 
 	cs.activeState = result.NetworkState
