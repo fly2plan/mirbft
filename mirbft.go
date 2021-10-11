@@ -438,8 +438,9 @@ func (n *Node) ProcessAsNewNode(
 	tickC <-chan time.Time,
 	initialNetworkState *msgs.NetworkState,
 	initialCheckpointValue []byte,
+	atGenesis bool,
 ) error {
-	events, err := processor.IntializeWALForNewNode(n.processorConfig.WAL, n.runtimeParms(), initialNetworkState, initialCheckpointValue)
+	events, err := processor.IntializeWALForNewNode(n.processorConfig.WAL, n.runtimeParms(), initialNetworkState, initialCheckpointValue, atGenesis)
 	if err != nil {
 		n.workErrNotifier.SetExitStatus(nil, errors.Errorf("state machine was not started"))
 		return err
