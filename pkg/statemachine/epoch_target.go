@@ -778,14 +778,14 @@ func (et *epochTarget) checkNewEpochReadyQuorum() {
 
 func (et *epochTarget) checkEpochResumed() {
 	switch {
+	case et.myNewEpoch == nil:
+		et.logger.Log(LevelDebug, "epoch waiting for next epoch to state transfer to", "epoch_no", et.number)
+		et.state = etPending
 	case et.commitState.stopAtSeqNo < et.startingSeqNo:
 		et.logger.Log(LevelDebug, "epoch waiting to resume until outstanding checkpoint commits", "epoch_no", et.number)
 	case et.commitState.lowWatermark+1 != et.startingSeqNo:
 		et.logger.Log(LevelDebug, "epoch waiting for state transfer to complete (and possibly to initiate)", "epoch_no", et.number)
 		// we are waiting for state transfer to initiate and complete
-		if et.myNewEpoch == nil {
-			et.state = etPending
-		}
 	default:
 		// There is room to allocate sequences, and the commit
 		// state is ready for those sequences to commit, begin
