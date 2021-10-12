@@ -9,8 +9,8 @@ package statemachine
 import (
 	"container/list"
 
-	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/state"
+	"github.com/fly2plan/mirbft/pkg/pb/msgs"
+	"github.com/fly2plan/mirbft/pkg/pb/state"
 )
 
 type ActionList struct {
@@ -140,18 +140,19 @@ func ActionCommit(qEntry *msgs.QEntry) *state.Action {
 	}
 }
 
-func (al *ActionList) Checkpoint(seqNo uint64, networkConfig *msgs.NetworkState_Config, clientStates []*msgs.NetworkState_Client) *ActionList {
-	al.PushBack(ActionCheckpoint(seqNo, networkConfig, clientStates))
+func (al *ActionList) Checkpoint(seqNo uint64, networkConfig *msgs.NetworkState_Config, clientStates []*msgs.NetworkState_Client, epochConfig *msgs.EpochConfig) *ActionList {
+	al.PushBack(ActionCheckpoint(seqNo, networkConfig, clientStates, epochConfig))
 	return al
 }
 
-func ActionCheckpoint(seqNo uint64, networkConfig *msgs.NetworkState_Config, clientStates []*msgs.NetworkState_Client) *state.Action {
+func ActionCheckpoint(seqNo uint64, networkConfig *msgs.NetworkState_Config, clientStates []*msgs.NetworkState_Client, epochConfig *msgs.EpochConfig) *state.Action {
 	return &state.Action{
 		Type: &state.Action_Checkpoint{
 			Checkpoint: &state.ActionCheckpoint{
 				SeqNo:         seqNo,
 				NetworkConfig: networkConfig,
 				ClientStates:  clientStates,
+				EpochConfig:   epochConfig,
 			},
 		},
 	}

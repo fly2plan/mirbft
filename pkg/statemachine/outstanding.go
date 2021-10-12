@@ -9,7 +9,7 @@ package statemachine
 import (
 	"fmt"
 
-	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
+	"github.com/fly2plan/mirbft/pkg/pb/msgs"
 )
 
 type ackKey struct {

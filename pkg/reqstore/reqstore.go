@@ -12,8 +12,8 @@ package reqstore
 
 import (
 	"fmt"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
 	badger "github.com/dgraph-io/badger/v2"
+	"github.com/fly2plan/mirbft/pkg/pb/msgs"
 	"github.com/pkg/errors"
 )
 

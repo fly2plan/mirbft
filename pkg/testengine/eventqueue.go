@@ -12,9 +12,9 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/fly2plan/mirbft/pkg/pb/msgs"
+	"github.com/fly2plan/mirbft/pkg/pb/state"
 	"github.com/fly2plan/mirbft/pkg/statemachine"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/state"
 )
 
 type Event struct {

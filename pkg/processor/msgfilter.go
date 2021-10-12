@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package processor
 
 import (
-	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
+	"github.com/fly2plan/mirbft/pkg/pb/msgs"
 
 	"github.com/pkg/errors"
 )

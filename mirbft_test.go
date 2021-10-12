@@ -23,11 +23,11 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/fly2plan/mirbft"
-	"github.com/hyperledger-labs/mirbft/pkg/eventlog"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
-	"github.com/hyperledger-labs/mirbft/pkg/reqstore"
-	"github.com/hyperledger-labs/mirbft/pkg/simplewal"
-	"github.com/hyperledger-labs/mirbft/pkg/status"
+	"github.com/fly2plan/mirbft/pkg/eventlog"
+	"github.com/fly2plan/mirbft/pkg/pb/msgs"
+	"github.com/fly2plan/mirbft/pkg/reqstore"
+	"github.com/fly2plan/mirbft/pkg/simplewal"
+	"github.com/fly2plan/mirbft/pkg/status"
 )
 
 var (

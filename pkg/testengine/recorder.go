@@ -22,12 +22,12 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/fly2plan/mirbft"
+	"github.com/fly2plan/mirbft/pkg/eventlog"
+	"github.com/fly2plan/mirbft/pkg/pb/msgs"
+	"github.com/fly2plan/mirbft/pkg/pb/recording"
+	"github.com/fly2plan/mirbft/pkg/pb/state"
 	"github.com/fly2plan/mirbft/pkg/processor"
 	"github.com/fly2plan/mirbft/pkg/statemachine"
-	"github.com/hyperledger-labs/mirbft/pkg/eventlog"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/recording"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/state"
 )
 
 func uint64ToBytes(value uint64) []byte {

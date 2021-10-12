@@ -12,7 +12,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
+	"github.com/fly2plan/mirbft/pkg/pb/msgs"
 )
 
 func isCommitted(reqNo uint64, clientState *msgs.NetworkState_Client) bool {

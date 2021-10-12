@@ -12,7 +12,7 @@ package simplewal
 import (
 	"sync"
 
-	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
+	"github.com/fly2plan/mirbft/pkg/pb/msgs"
 
 	"github.com/pkg/errors"
 	"github.com/tidwall/wal"

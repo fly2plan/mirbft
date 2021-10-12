@@ -15,9 +15,9 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/hyperledger-labs/mirbft/pkg/eventlog"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/recording"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/state"
+	"github.com/fly2plan/mirbft/pkg/eventlog"
+	"github.com/fly2plan/mirbft/pkg/pb/recording"
+	"github.com/fly2plan/mirbft/pkg/pb/state"
 )
 
 var tickEvent = &state.Event{

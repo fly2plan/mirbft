@@ -12,9 +12,9 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/hyperledger-labs/mirbft/pkg/pb/msgs"
-	"github.com/hyperledger-labs/mirbft/pkg/pb/state"
-	"github.com/hyperledger-labs/mirbft/pkg/status"
+	"github.com/fly2plan/mirbft/pkg/pb/msgs"
+	"github.com/fly2plan/mirbft/pkg/pb/state"
+	"github.com/fly2plan/mirbft/pkg/status"
 )
 
 // TODO this comment section is woefully out of date, but contains so much information
