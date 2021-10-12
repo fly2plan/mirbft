@@ -231,6 +231,11 @@ func (et *epochTracker) reinitialize() *ActionList {
 			}
 		}
 
+		et.commitState.epochConfig = &msgs.EpochConfig{
+			Number:  epochChange.NewEpoch,
+			Leaders: et.currentEpoch.myLeaderChoice,
+		}
+
 		et.needsStateTransfer = false
 	default:
 		// There's no active epoch, it did not end gracefully, or ungracefully
@@ -275,14 +280,17 @@ func (et *epochTracker) advanceState() *ActionList {
 	lastCheckpoint := myEpochChange.underlying.Checkpoints[len(myEpochChange.underlying.Checkpoints)-1]
 
 	graceful := false
-	switch lastCheckpoint.SeqNo {
-	case et.currentEpoch.activeEpoch.epochConfig.PlannedExpiration:
-		fallthrough
-	case et.currentEpoch.commitState.stopAtSeqNo:
-		actions.concat(et.persisted.addFEntry(&msgs.FEntry{
-			EndsEpochConfig: et.currentEpoch.networkNewEpoch.Config,
-		}))
-		graceful = true
+	if et.currentEpoch.activeEpoch != nil {
+		switch lastCheckpoint.SeqNo {
+		case et.currentEpoch.activeEpoch.epochConfig.PlannedExpiration:
+			fallthrough
+		case et.currentEpoch.commitState.stopAtSeqNo:
+			actions.concat(et.persisted.addFEntry(&msgs.FEntry{
+				EndsEpochConfig: et.currentEpoch.networkNewEpoch.Config,
+			}))
+			graceful = true
+		}
+		et.commitState.epochConfig = et.currentEpoch.activeEpoch.epochConfig
 	}
 
 	if et.commitState.activeState.Reconfigured {
@@ -336,6 +344,7 @@ func (et *epochTracker) advanceState() *ActionList {
 		et.myConfig,
 		et.logger,
 	)
+
 	et.currentEpoch.myEpochChange = myEpochChange
 	et.currentEpoch.myLeaderChoice = myLeaderChoice // XXX, wrong
 

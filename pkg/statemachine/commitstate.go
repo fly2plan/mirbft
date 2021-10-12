@@ -31,6 +31,7 @@ type commitState struct {
 	highestCommit     uint64 // Highest in order commit sequence number. All SNs up to highestCommit are committed.
 	stopAtSeqNo       uint64
 	activeState       *msgs.NetworkState
+	epochConfig       *msgs.EpochConfig
 	lowerHalfCommits  []*msgs.QEntry
 	upperHalfCommits  []*msgs.QEntry
 	checkpointPending bool
@@ -238,7 +239,7 @@ func (cs *commitState) drain() *ActionList {
 		if cs.lastAppliedCommit == cs.lowWatermark+ci && !cs.checkpointPending {
 			networkConfig, clientConfigs := nextNetworkConfig(cs.activeState, cs.committingClients)
 
-			actions.Checkpoint(cs.lastAppliedCommit, networkConfig, clientConfigs)
+			actions.Checkpoint(cs.lastAppliedCommit, networkConfig, clientConfigs, cs.epochConfig)
 
 			cs.checkpointPending = true
 			cs.logger.Log(LevelDebug, "all previous sequences has committed, requesting checkpoint", "seq_no", cs.lastAppliedCommit)
