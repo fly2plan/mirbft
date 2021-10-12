@@ -274,6 +274,7 @@ func (et *epochTracker) advanceState() *ActionList {
 
 	lastCheckpoint := myEpochChange.underlying.Checkpoints[len(myEpochChange.underlying.Checkpoints)-1]
 
+	graceful := false
 	switch lastCheckpoint.SeqNo {
 	case et.currentEpoch.activeEpoch.epochConfig.PlannedExpiration:
 		fallthrough
@@ -281,6 +282,7 @@ func (et *epochTracker) advanceState() *ActionList {
 		actions.concat(et.persisted.addFEntry(&msgs.FEntry{
 			EndsEpochConfig: et.currentEpoch.networkNewEpoch.Config,
 		}))
+		graceful = true
 	}
 
 	if et.commitState.activeState.Reconfigured {
@@ -290,7 +292,7 @@ func (et *epochTracker) advanceState() *ActionList {
 
 	myLeaderChoice := make([]uint64, 0)
 	if et.currentEpoch.networkNewEpoch != nil {
-		if len(et.currentEpoch.networkNewEpoch.Config.Leaders) < len(et.networkConfig.Nodes) {
+		if graceful && len(et.currentEpoch.networkNewEpoch.Config.Leaders) < len(et.networkConfig.Nodes) {
 			lastEpochConfig := et.currentEpoch.networkNewEpoch.Config
 			potentialLeaders := make([]uint64, len(et.networkConfig.Nodes))
 			copy(potentialLeaders, et.networkConfig.Nodes)
@@ -318,6 +320,8 @@ func (et *epochTracker) advanceState() *ActionList {
 		} else {
 			myLeaderChoice = append(myLeaderChoice, et.currentEpoch.networkNewEpoch.Config.Leaders...)
 		}
+	} else {
+		myLeaderChoice = append(myLeaderChoice, et.currentEpoch.myLeaderChoice...)
 	}
 
 	et.currentEpoch = newEpochTarget(
