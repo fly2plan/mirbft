@@ -436,11 +436,12 @@ func (n *Node) runtimeParms() *state.EventInitialParameters {
 func (n *Node) ProcessAsNewNode(
 	exitC <-chan struct{},
 	tickC <-chan time.Time,
+	initialSeqNo uint64,
 	initialNetworkState *msgs.NetworkState,
 	initialCheckpointValue []byte,
-	atGenesis bool,
+	previousEpochEndConfig *msgs.EpochConfig,
 ) error {
-	events, err := processor.IntializeWALForNewNode(n.processorConfig.WAL, n.runtimeParms(), initialNetworkState, initialCheckpointValue, atGenesis)
+	events, err := processor.IntializeWALForNewNode(n.processorConfig.WAL, n.runtimeParms(), initialSeqNo, initialNetworkState, initialCheckpointValue, previousEpochEndConfig)
 	if err != nil {
 		n.workErrNotifier.SetExitStatus(nil, errors.Errorf("state machine was not started"))
 		return err

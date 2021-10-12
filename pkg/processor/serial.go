@@ -71,48 +71,28 @@ func ProcessReqStoreEvents(reqStore RequestStore, events *statemachine.EventList
 func IntializeWALForNewNode(
 	wal WAL,
 	runtimeParms *state.EventInitialParameters,
+	initialSeqNo uint64,
 	initialNetworkState *msgs.NetworkState,
 	initialCheckpointValue []byte,
-	atGenesis bool,
+	previousEpochEndConfig *msgs.EpochConfig,
 ) (*statemachine.EventList, error) {
 	entries := []*msgs.Persistent{
 		{
 			Type: &msgs.Persistent_CEntry{
 				CEntry: &msgs.CEntry{
-					SeqNo:           0,
+					SeqNo:           initialSeqNo,
 					CheckpointValue: initialCheckpointValue,
 					NetworkState:    initialNetworkState,
 				},
 			},
 		},
-	}
-	if atGenesis {
-		entries = append(entries,
-			&msgs.Persistent{
-				Type: &msgs.Persistent_FEntry{
-					FEntry: &msgs.FEntry{
-						EndsEpochConfig: &msgs.EpochConfig{
-							Number:  0,
-							Leaders: initialNetworkState.Config.Nodes,
-						},
-					},
+		{
+			Type: &msgs.Persistent_FEntry{
+				FEntry: &msgs.FEntry{
+					EndsEpochConfig: previousEpochEndConfig,
 				},
 			},
-		)
-	} else {
-		entries = append(entries,
-			&msgs.Persistent{
-				Type: &msgs.Persistent_NEntry{
-					NEntry: &msgs.NEntry{
-						SeqNo: 1,
-						EpochConfig: &msgs.EpochConfig{
-							Number:  0,
-							Leaders: initialNetworkState.Config.Nodes,
-						},
-					},
-				},
-			},
-		)
+		},
 	}
 
 	events := &statemachine.EventList{}

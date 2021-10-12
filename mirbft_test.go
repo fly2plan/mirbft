@@ -177,7 +177,7 @@ func (fl *FakeApp) Apply(entry *msgs.QEntry) error {
 	return nil
 }
 
-func (fl *FakeApp) Snap(*msgs.NetworkState_Config, []*msgs.NetworkState_Client) ([]byte, []*msgs.Reconfiguration, error) {
+func (fl *FakeApp) Snap(uint64, *msgs.NetworkState_Config, []*msgs.NetworkState_Client) ([]byte, []*msgs.Reconfiguration, error) {
 	return Uint64ToBytes(uint64(len(fl.Entries))), nil, nil
 }
 
@@ -436,7 +436,7 @@ func (tr *TestReplica) Run() (*status.StateMachine, error) {
 		}
 	}()
 
-	err = node.ProcessAsNewNode(tr.DoneC, ticker.C, tr.InitialNetworkState, []byte("fake"))
+	err = node.ProcessAsNewNode(tr.DoneC, ticker.C, 0, tr.InitialNetworkState, []byte("fake"), &msgs.EpochConfig{Number: 0, Leaders: tr.InitialNetworkState.Config.Nodes})
 	_ = err // XXX we need to rewire all of this
 
 	return node.Status(context.Background())

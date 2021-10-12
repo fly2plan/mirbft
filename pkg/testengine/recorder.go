@@ -285,7 +285,7 @@ type NodeState struct {
 	StateTransfers []uint64
 }
 
-func (ns *NodeState) Snap(networkConfig *msgs.NetworkState_Config, clientsState []*msgs.NetworkState_Client) ([]byte, []*msgs.Reconfiguration, error) {
+func (ns *NodeState) Snap(seqNo uint64, networkConfig *msgs.NetworkState_Config, clientsState []*msgs.NetworkState_Client) ([]byte, []*msgs.Reconfiguration, error) {
 	pr := ns.PendingReconfigurations
 	ns.PendingReconfigurations = nil
 
@@ -422,7 +422,7 @@ func (r *Recorder) Recording(output *gzip.Writer) (*Recording, error) {
 			ReqStore:       reqStore,
 		}
 
-		checkpointValue, _, err := nodeState.Snap(r.NetworkState.Config, r.NetworkState.Clients)
+		checkpointValue, _, err := nodeState.Snap(0, r.NetworkState.Config, r.NetworkState.Clients)
 		if err != nil {
 			return nil, errors.WithMessage(err, "could not generate initial checkpoint")
 		}
