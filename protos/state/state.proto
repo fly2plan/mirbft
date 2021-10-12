@@ -148,6 +148,7 @@ message ActionCheckpoint {
     uint64 seq_no = 2;
     msgs.NetworkState.Config network_config = 3;
     repeated msgs.NetworkState.Client client_states = 4;
+    msgs.EpochConfig epoch_config = 5;
 }
 
 message ActionRequestSlot {
