@@ -28,7 +28,7 @@ type Link interface {
 
 type App interface {
 	Apply(*msgs.QEntry) error
-	Snap(seqNo uint64, networkConfig *msgs.NetworkState_Config, clientsState []*msgs.NetworkState_Client) ([]byte, []*msgs.Reconfiguration, error)
+	Snap(seqNo uint64, networkConfig *msgs.NetworkState_Config, clientsState []*msgs.NetworkState_Client, epochConfig *msgs.EpochConfig) ([]byte, []*msgs.Reconfiguration, error)
 	TransferTo(seqNo uint64, snap []byte) (*msgs.NetworkState, error)
 }
 
@@ -207,7 +207,7 @@ func ProcessAppActions(app App, actions *statemachine.ActionList) (*statemachine
 			}
 		case *state.Action_Checkpoint:
 			cp := t.Checkpoint
-			value, pendingReconf, err := app.Snap(cp.SeqNo, cp.NetworkConfig, cp.ClientStates)
+			value, pendingReconf, err := app.Snap(cp.SeqNo, cp.NetworkConfig, cp.ClientStates, cp.EpochConfig)
 			if err != nil {
 				return nil, errors.WithMessage(err, "app failed to generate snapshot")
 			}
