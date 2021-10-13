@@ -28,6 +28,7 @@ type epochTracker struct {
 	clientHashDisseminator *clientHashDisseminator
 	futureMsgs             map[nodeID]*msgBuffer
 	needsStateTransfer     bool
+	wasUngraceful          bool
 
 	maxEpochs              map[nodeID]uint64
 	maxCorrectEpoch        uint64
@@ -305,10 +306,43 @@ func (et *epochTracker) advanceState() *ActionList {
 			potentialLeaders := make([]uint64, len(et.networkConfig.Nodes))
 			copy(potentialLeaders, et.networkConfig.Nodes)
 
+			// If the node is already in the leader set ignore it
 			for i, node := range et.networkConfig.Nodes {
 				j := sort.Search(len(lastEpochConfig.Leaders),
 					func(j int) bool { return lastEpochConfig.Leaders[j] >= node })
 				if j < len(lastEpochConfig.Leaders) && lastEpochConfig.Leaders[j] == node {
+					potentialLeaders[i] = 0
+				}
+			}
+
+			// If the last epoch was ungraceful then reduce the loyalty of the potentially responsible node
+			if et.wasUngraceful {
+				faultyNode := et.networkConfig.Nodes[len(lastEpochConfig.Leaders)]
+
+				loyaltiesKeys := make([]uint64, len(et.networkConfig.Loyalties))
+				i := 0
+				for k := range et.networkConfig.Loyalties {
+					loyaltiesKeys[i] = k
+					i++
+				}
+
+				i = sort.Search(len(et.networkConfig.Loyalties),
+					func(i int) bool { return loyaltiesKeys[i] >= faultyNode })
+				if i < len(et.networkConfig.Loyalties) && loyaltiesKeys[i] == faultyNode {
+					if et.networkConfig.Loyalties[uint64(i)] < 100 {
+						et.networkConfig.Loyalties[uint64(i)] = 0
+					} else {
+						// TODO(harrymknight) Make the deducted amount configurable
+						et.networkConfig.Loyalties[uint64(i)] -= 100
+					}
+				}
+
+				et.wasUngraceful = false
+			}
+
+			// If a node has been too traitorous ignore it
+			for i := range et.networkConfig.Nodes {
+				if et.networkConfig.Loyalties[uint64(i)] == 0 {
 					potentialLeaders[i] = 0
 				}
 			}
@@ -326,10 +360,14 @@ func (et *epochTracker) advanceState() *ActionList {
 			copy(leaderChoice, et.currentEpoch.myLeaderChoice)
 			myLeaderChoice = append(myLeaderChoice, leaderChoice...)
 		} else {
-			myLeaderChoice = append(myLeaderChoice, et.currentEpoch.networkNewEpoch.Config.Leaders...)
+			currentLeaders := et.currentEpoch.networkNewEpoch.Config.Leaders
+			myLeaderChoice = append(myLeaderChoice, currentLeaders[:len(currentLeaders)-1]...)
+			et.wasUngraceful = true
 		}
 	} else {
-		myLeaderChoice = append(myLeaderChoice, et.currentEpoch.myLeaderChoice...)
+		currentLeaders := et.currentEpoch.myLeaderChoice
+		myLeaderChoice = append(myLeaderChoice, currentLeaders[:len(currentLeaders)-1]...)
+		et.wasUngraceful = true
 	}
 
 	et.currentEpoch = newEpochTarget(
