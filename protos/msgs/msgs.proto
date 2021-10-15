@@ -75,7 +75,7 @@ message NetworkState {
         // integer the greater the nodes loyalty. If a node is consistently loyal its loyalty will increase, but if
         // a node is found to be faulty it's loyalty will decrease. If a node's loyalty were to drop below, or reaches 0,
         // the node will be prevented from participating as a leader or a primary in subsequent epochs.
-        map<uint64, uint64> loyalties = 6;
+        repeated uint64 loyalties = 6;
     }
 
     message Client {
