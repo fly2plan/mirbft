@@ -322,7 +322,7 @@ func (et *epochTracker) advanceState() *ActionList {
 				loyaltiesKeys := make([]uint64, len(et.networkConfig.Loyalties))
 				i := 0
 				for k := range et.networkConfig.Loyalties {
-					loyaltiesKeys[i] = k
+					loyaltiesKeys[i] = uint64(k)
 					i++
 				}
 
