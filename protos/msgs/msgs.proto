@@ -27,7 +27,7 @@ message NetworkState {
         // or reaches 0, the node will be prevented from participating as a leader or a primary in subsequent epochs.
         // The node each loyalty corresponds to is implicit e.g. the loyalty at the first index corresponds to the node
         // at the first index of nodes.
-        repeated uint64 loyalties = 2;
+        repeated int64 loyalties = 2;
 
         // Timeouts is an array of the number of epochs a given node cannot participate as a leader in. Like loyalties
         // the node each timeout corresponds to is implicit.
