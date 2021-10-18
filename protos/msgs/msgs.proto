@@ -21,23 +21,35 @@ message NetworkState {
         // The number of nodeIDs corresponds to the size of the network.
         repeated uint64 nodes = 1;
 
+        // Loyalties is an array of nodes' loyalty to consensus, represented as a positive integer. The greater the
+        // integer the greater the nodes loyalty. If a node is consistently loyal its loyalty will increase, but if
+        // a node is found to be faulty it's loyalty will decrease. If a node's loyalty were to drop below,
+        // or reaches 0, the node will be prevented from participating as a leader or a primary in subsequent epochs.
+        // The node each loyalty corresponds to is implicit e.g. the loyalty at the first index corresponds to the node
+        // at the first index of nodes.
+        repeated uint64 loyalties = 2;
+
+        // Timeouts is an array of the number of epochs a given node cannot participate as a leader in. Like loyalties
+        // the node each timeout corresponds to is implicit.
+        repeated uint64 timeouts = 3;
+
         // CheckpointInterval is how often checkpoints are taken.  In terms of
         // of sequence numbers, this is multiplied by the configured number of
         // buckets, so that it scales naturally as the number of buckets increases
         // or decreases.
-        int32 checkpoint_interval = 2;
+        int32 checkpoint_interval = 4;
 
         // MaxEpochLength is the maximum number of sequence numbers which may preprepare
         // in an epoch.  This is to force bucket rotation even when the system is otherwise
         // in a healthy state.  Setting this value to uint64_max will effectively disable
         // graceful epoch changes.
-        uint64 max_epoch_length = 3;
+        uint64 max_epoch_length = 5;
 
         // NumberOfBuckets is the number of buckets the network is configured to operate over.
         // Each bucket is a partition of the request space.  Typically, number of buckets should
         // be nodes * m, where 'm' is some small constant.  Setting this value to 1 effectively
         // reduces Mir to PBFT.
-        int32 number_of_buckets = 4;
+        int32 number_of_buckets = 6;
 
         // F is the number of byzantine faults tolerated by the network.
         // It must be less than len(nodes)/3 (truncated).  The 'F' parameter
@@ -69,13 +81,8 @@ message NetworkState {
         // 15 | 7 | 6 | 6 | 5 | 5 |   |
         // 16 | 7 | 7 | 6 | 6 | 5 | 5 |
         // 17 | 8 | 7 | 7 | 6 | 6 | 5 |
-        int32 f = 5;
+        int32 f = 7;
 
-        // Loyalties is a map from nodeIDs to their loyalty to consensus, represented as a positive integer. The greater the
-        // integer the greater the nodes loyalty. If a node is consistently loyal its loyalty will increase, but if
-        // a node is found to be faulty it's loyalty will decrease. If a node's loyalty were to drop below, or reaches 0,
-        // the node will be prevented from participating as a leader or a primary in subsequent epochs.
-        repeated uint64 loyalties = 6;
     }
 
     message Client {
