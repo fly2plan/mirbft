@@ -252,9 +252,10 @@ func (p *persisted) iterate(li logIterator) {
 	}
 }
 
-func (p *persisted) constructEpochChange(newEpoch uint64) *msgs.EpochChange {
+func (p *persisted) constructEpochChange(newEpoch uint64, offset uint64) *msgs.EpochChange {
 	newEpochChange := &msgs.EpochChange{
 		NewEpoch: newEpoch,
+		Offset:   offset,
 	}
 
 	// To avoid putting redundant entries into the pSet, we count
