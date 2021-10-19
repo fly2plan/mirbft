@@ -95,6 +95,10 @@ func IntializeWALForNewNode(
 		},
 	}
 
+	if initialSeqNo > 0 {
+		initialNetworkState.Reconfigured = true
+	}
+
 	events := &statemachine.EventList{}
 	events.Initialize(runtimeParms)
 	for i, entry := range entries {
