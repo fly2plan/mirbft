@@ -498,7 +498,7 @@ func (et *epochTracker) applyMsg(source nodeID, msg *msgs.Msg) *ActionList {
 	case *msgs.Msg_Commit:
 		return target.step(source, msg)
 	case *msgs.Msg_Suspect:
-		target.applySuspectMsg(source)
+		target.applySuspectMsg(source, innerMsg.Suspect)
 		return &ActionList{}
 	case *msgs.Msg_EpochChange:
 		return target.applyEpochChangeMsg(source, innerMsg.EpochChange)
