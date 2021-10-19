@@ -182,7 +182,14 @@ func (et *epochTracker) reinitialize() *ActionList {
 			return actions.concat(et.currentEpoch.advanceState())
 		}
 
-		epochChange := et.persisted.constructEpochChange(lastECEntry.EpochNumber)
+		offset := uint64(0)
+		myPrimaryChoice := lastECEntry.EpochNumber % uint64(len(et.networkConfig.Nodes))
+		for et.networkConfig.Timeouts[myPrimaryChoice] == 0 || et.networkConfig.Loyalties[myPrimaryChoice] == -1 {
+			offset += 1
+			myPrimaryChoice = (lastECEntry.EpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+		}
+
+		epochChange := et.persisted.constructEpochChange(lastECEntry.EpochNumber, offset)
 		parsedEpochChange, err := newParsedEpochChange(epochChange)
 		assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
 
@@ -369,6 +376,18 @@ func (et *epochTracker) advanceState() *ActionList {
 		myLeaderChoice = append(myLeaderChoice, currentLeaders[:len(currentLeaders)-1]...)
 		et.wasUngraceful = true
 	}
+
+	offset := uint64(0)
+	myPrimaryChoice := newEpochNumber % uint64(len(et.networkConfig.Nodes))
+	for et.networkConfig.Timeouts[myPrimaryChoice] == 0 || et.networkConfig.Loyalties[myPrimaryChoice] == -1 {
+		offset += 1
+		myPrimaryChoice = (newEpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+	}
+
+	epochChange = et.persisted.constructEpochChange(newEpochNumber, offset)
+
+	myEpochChange, err = newParsedEpochChange(epochChange)
+	assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
 
 	et.currentEpoch = newEpochTarget(
 		newEpochNumber,
