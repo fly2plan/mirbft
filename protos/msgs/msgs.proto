@@ -271,11 +271,12 @@ message Checkpoint {
 }
 
 message Suspect {
-    uint64 epoch = 1;
-
     message Context {
         uint64 seq_no = 1;
     }
+
+    uint64 epoch = 1;
+    Context context = 2;
 }
 
 // EpochChange messages are used to implement the classical PBFT view-change
