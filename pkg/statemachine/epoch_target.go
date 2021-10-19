@@ -872,11 +872,20 @@ func (et *epochTarget) moveLowWatermark(seqNo uint64) *ActionList {
 	return actions
 }
 
-func (et *epochTarget) applySuspectMsg(source nodeID) {
-	et.suspicions[source] = struct{}{}
+func (et *epochTarget) applySuspectMsg(source nodeID, msg *msgs.Suspect) {
+	var suspiciousNode nodeID
+	if msg.Context != nil {
+		highestCommittedSeqNo := msg.Context.SeqNo
+		suspiciousNode = et.activeEpoch.buckets[et.activeEpoch.seqToBucket(highestCommittedSeqNo)]
+	} else {
+		suspiciousNode = nodeID(et.number % uint64(len(et.networkConfig.Nodes)))
+	}
 
-	if len(et.suspicions) >= intersectionQuorum(et.networkConfig) {
+	et.suspicions[suspiciousNode][source] = struct{}{}
+
+	if len(et.suspicions[suspiciousNode]) >= intersectionQuorum(et.networkConfig) {
 		et.logger.Log(LevelDebug, "epoch ungracefully transitioning from in progress to done", "epoch_no", et.number)
+		et.activeEpoch.suspiciousNode = suspiciousNode
 		et.state = etDone
 	}
 }

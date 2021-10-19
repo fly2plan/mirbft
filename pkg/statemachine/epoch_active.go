@@ -40,6 +40,7 @@ type activeEpoch struct {
 
 	lastCommittedAtTick uint64
 	ticksSinceProgress  uint32
+	suspiciousNode      nodeID
 }
 
 func newActiveEpoch(epochConfig *msgs.EpochConfig, persisted *persisted, nodeBuffers *nodeBuffers, commitState *commitState, clientTracker *clientTracker, myConfig *state.EventInitialParameters, logger Logger) *activeEpoch {
@@ -448,6 +449,9 @@ func (e *activeEpoch) tick() *ActionList {
 	if e.ticksSinceProgress > e.myConfig.SuspectTicks {
 		suspect := &msgs.Suspect{
 			Epoch: e.epochConfig.Number,
+			Context: &msgs.Suspect_Context{
+				SeqNo: e.commitState.highestCommit,
+			},
 		}
 		actions.Send(e.networkConfig.Nodes, &msgs.Msg{
 			Type: &msgs.Msg_Suspect{
