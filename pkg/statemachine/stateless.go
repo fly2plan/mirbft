@@ -129,6 +129,7 @@ func constructNewEpochConfig(config *msgs.NetworkState_Config, newLeaders []uint
 	checkpoints := map[checkpointKey][]nodeID{}
 
 	var newEpochNumber uint64 // TODO this is super-hacky
+	var offset uint64
 
 	for _, id := range config.Nodes {
 		nodeID := nodeID(id)
@@ -141,6 +142,7 @@ func constructNewEpochConfig(config *msgs.NetworkState_Config, newLeaders []uint
 		}
 
 		newEpochNumber = epochChange.underlying.NewEpoch
+		offset = epochChange.underlying.Offset
 		for _, checkpoint := range epochChange.underlying.Checkpoints {
 
 			key := checkpointKey{
@@ -196,6 +198,7 @@ func constructNewEpochConfig(config *msgs.NetworkState_Config, newLeaders []uint
 	newEpochConfig := &msgs.NewEpochConfig{
 		Config: &msgs.EpochConfig{
 			Number:            newEpochNumber,
+			Offset:            offset,
 			Leaders:           newLeaders,
 			PlannedExpiration: maxCheckpoint.SeqNo + config.MaxEpochLength,
 		},
