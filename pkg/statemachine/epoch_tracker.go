@@ -131,6 +131,7 @@ func (et *epochTracker) reinitialize() *ActionList {
 
 		et.currentEpoch = newEpochTarget(
 			lastNEntry.EpochConfig.Number,
+			lastNEntry.EpochConfig.Offset,
 			et.persisted,
 			et.nodeBuffers,
 			et.commitState,
@@ -195,6 +196,7 @@ func (et *epochTracker) reinitialize() *ActionList {
 
 		et.currentEpoch = newEpochTarget(
 			epochChange.NewEpoch,
+			offset,
 			et.persisted,
 			et.nodeBuffers,
 			et.commitState,
@@ -280,7 +282,7 @@ func (et *epochTracker) advanceState() *ActionList {
 	if et.maxCorrectEpoch > newEpochNumber {
 		newEpochNumber = et.maxCorrectEpoch
 	}
-	epochChange := et.persisted.constructEpochChange(newEpochNumber)
+	epochChange := et.persisted.constructEpochChange(newEpochNumber, 0)
 
 	myEpochChange, err := newParsedEpochChange(epochChange)
 	assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
@@ -391,6 +393,7 @@ func (et *epochTracker) advanceState() *ActionList {
 
 	et.currentEpoch = newEpochTarget(
 		newEpochNumber,
+		offset,
 		et.persisted,
 		et.nodeBuffers,
 		et.commitState,

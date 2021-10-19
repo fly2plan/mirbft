@@ -42,13 +42,14 @@ type epochTarget struct {
 	commitState     *commitState
 	stateTicks      uint64
 	number          uint64
+	offset          uint64
 	startingSeqNo   uint64
 	changes         map[nodeID]*epochChange
 	strongChanges   map[nodeID]*parsedEpochChange // Parsed EpochChange messages acknowledged by enough nodes
 	echos           map[*msgs.NewEpochConfig]map[nodeID]struct{}
 	readies         map[*msgs.NewEpochConfig]map[nodeID]struct{}
 	activeEpoch     *activeEpoch
-	suspicions      map[nodeID]struct{}
+	suspicions      map[nodeID]map[nodeID]struct{}
 	myNewEpoch      *msgs.NewEpoch // The NewEpoch msg we computed from the epoch changes we know of
 	myEpochChange   *parsedEpochChange
 	myLeaderChoice  []uint64             // Set along with myEpochChange
@@ -69,6 +70,7 @@ type epochTarget struct {
 
 func newEpochTarget(
 	number uint64,
+	offset uint64,
 	persisted *persisted,
 	nodeBuffers *nodeBuffers,
 	commitState *commitState,
@@ -90,13 +92,14 @@ func newEpochTarget(
 	return &epochTarget{
 		state:                  etPrepending,
 		number:                 number,
+		offset:                 offset,
 		commitState:            commitState,
-		suspicions:             map[nodeID]struct{}{},
+		suspicions:             map[nodeID]map[nodeID]struct{}{},
 		changes:                map[nodeID]*epochChange{},
 		strongChanges:          map[nodeID]*parsedEpochChange{},
 		echos:                  map[*msgs.NewEpochConfig]map[nodeID]struct{}{},
 		readies:                map[*msgs.NewEpochConfig]map[nodeID]struct{}{},
-		isPrimary:              number%uint64(len(networkConfig.Nodes)) == myConfig.Id,
+		isPrimary:              (number+offset)%uint64(len(networkConfig.Nodes)) == myConfig.Id,
 		prestartBuffers:        prestartBuffers,
 		persisted:              persisted,
 		nodeBuffers:            nodeBuffers,
