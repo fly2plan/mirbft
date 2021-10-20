@@ -881,6 +881,10 @@ func (et *epochTarget) applySuspectMsg(source nodeID, msg *msgs.Suspect) {
 		suspiciousNode = nodeID(et.number % uint64(len(et.networkConfig.Nodes)))
 	}
 
+	if et.suspicions[suspiciousNode] == nil {
+		et.suspicions[suspiciousNode] = map[nodeID]struct{}{}
+	}
+
 	et.suspicions[suspiciousNode][source] = struct{}{}
 
 	if len(et.suspicions[suspiciousNode]) >= intersectionQuorum(et.networkConfig) {
