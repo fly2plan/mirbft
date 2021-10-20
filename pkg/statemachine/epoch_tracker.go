@@ -258,6 +258,10 @@ func (et *epochTracker) reinitialize() *ActionList {
 					}
 
 					et.currentEpoch.myLeaderChoice = append(lastEpochConfig.Leaders, newLeaders...)
+					sort.Slice(et.currentEpoch.myLeaderChoice,
+						func(i, j int) bool {
+							return et.currentEpoch.myLeaderChoice[i] < et.currentEpoch.myLeaderChoice[j]
+						})
 				} else {
 					et.currentEpoch.myLeaderChoice = lastEpochConfig.Leaders
 				}
@@ -404,6 +408,7 @@ func (et *epochTracker) advanceState() *ActionList {
 				leaderChoice := make([]uint64, len(et.currentEpoch.myLeaderChoice))
 				copy(leaderChoice, et.currentEpoch.myLeaderChoice)
 				myLeaderChoice = append(myLeaderChoice, leaderChoice...)
+				sort.Slice(myLeaderChoice, func(i, j int) bool { return myLeaderChoice[i] < myLeaderChoice[j] })
 			} else {
 				myLeaderChoice = et.currentEpoch.myLeaderChoice
 			}
