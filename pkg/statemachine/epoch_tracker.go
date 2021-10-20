@@ -341,7 +341,7 @@ func (et *epochTracker) advanceState() *ActionList {
 		// If this epoch was ungraceful then reduce the loyalty of the responsible node,
 		// assign it a timeout, and remove it from the leader set
 		if !graceful {
-			faultyNode := et.currentEpoch.activeEpoch.suspiciousNode
+			faultyNode := et.currentEpoch.suspiciousNode
 
 			i := sort.Search(len(et.networkConfig.Nodes),
 				func(i int) bool { return nodeID(et.networkConfig.Nodes[i]) >= faultyNode })

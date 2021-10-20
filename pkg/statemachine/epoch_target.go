@@ -50,6 +50,7 @@ type epochTarget struct {
 	readies         map[*msgs.NewEpochConfig]map[nodeID]struct{}
 	activeEpoch     *activeEpoch
 	suspicions      map[nodeID]map[nodeID]struct{}
+	suspiciousNode  nodeID
 	myNewEpoch      *msgs.NewEpoch // The NewEpoch msg we computed from the epoch changes we know of
 	myEpochChange   *parsedEpochChange
 	myLeaderChoice  []uint64             // Set along with myEpochChange
@@ -889,7 +890,7 @@ func (et *epochTarget) applySuspectMsg(source nodeID, msg *msgs.Suspect) {
 
 	if len(et.suspicions[suspiciousNode]) >= intersectionQuorum(et.networkConfig) {
 		et.logger.Log(LevelDebug, "epoch ungracefully transitioning from in progress to done", "epoch_no", et.number)
-		et.activeEpoch.suspiciousNode = suspiciousNode
+		et.suspiciousNode = suspiciousNode
 		et.state = etDone
 	}
 }

@@ -40,7 +40,6 @@ type activeEpoch struct {
 
 	lastCommittedAtTick uint64
 	ticksSinceProgress  uint32
-	suspiciousNode      nodeID
 }
 
 func newActiveEpoch(epochConfig *msgs.EpochConfig, persisted *persisted, nodeBuffers *nodeBuffers, commitState *commitState, clientTracker *clientTracker, myConfig *state.EventInitialParameters, logger Logger) *activeEpoch {
