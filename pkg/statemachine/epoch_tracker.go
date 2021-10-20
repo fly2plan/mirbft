@@ -185,9 +185,17 @@ func (et *epochTracker) reinitialize() *ActionList {
 
 		offset := uint64(0)
 		myPrimaryChoice := lastECEntry.EpochNumber % uint64(len(et.networkConfig.Nodes))
+		if myPrimaryChoice == 0 && et.networkConfig.Nodes[0] != 0 {
+			offset += 1
+			myPrimaryChoice = (lastECEntry.EpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+		}
 		for et.networkConfig.Timeouts[myPrimaryChoice] != 0 || et.networkConfig.Loyalties[myPrimaryChoice] == -1 {
 			offset += 1
 			myPrimaryChoice = (lastECEntry.EpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+			if myPrimaryChoice == 0 && et.networkConfig.Nodes[0] != 0 {
+				offset += 1
+				myPrimaryChoice = (lastECEntry.EpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+			}
 		}
 
 		epochChange := et.persisted.constructEpochChange(lastECEntry.EpochNumber, offset)
@@ -423,9 +431,17 @@ func (et *epochTracker) advanceState() *ActionList {
 
 	offset := uint64(0)
 	myPrimaryChoice := newEpochNumber % uint64(len(et.networkConfig.Nodes))
+	if myPrimaryChoice == 0 && et.networkConfig.Nodes[0] != 0 {
+		offset += 1
+		myPrimaryChoice = (newEpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+	}
 	for et.networkConfig.Timeouts[myPrimaryChoice] != 0 || et.networkConfig.Loyalties[myPrimaryChoice] == -1 {
 		offset += 1
 		myPrimaryChoice = (newEpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+		if myPrimaryChoice == 0 && et.networkConfig.Nodes[0] != 0 {
+			offset += 1
+			myPrimaryChoice = (newEpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+		}
 	}
 
 	epochChange = et.persisted.constructEpochChange(newEpochNumber, offset)
