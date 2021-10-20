@@ -830,6 +830,8 @@ func (et *epochTarget) advanceState() *ActionList {
 			// TODO, handle case where planned epoch expiration is now
 			et.activeEpoch = newActiveEpoch(et.networkNewEpoch.Config, et.persisted, et.nodeBuffers, et.commitState, et.clientTracker, et.myConfig, et.logger)
 
+			et.commitState.epochConfig = et.activeEpoch.epochConfig
+
 			actions.concat(et.activeEpoch.advance())
 
 			et.logger.Log(LevelDebug, "epoch transitioning from ready to in progress", "epoch_no", et.number)

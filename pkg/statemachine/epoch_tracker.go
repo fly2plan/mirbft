@@ -327,7 +327,6 @@ func (et *epochTracker) advanceState() *ActionList {
 			}))
 			graceful = true
 		}
-		et.commitState.epochConfig = et.currentEpoch.activeEpoch.epochConfig
 	}
 
 	if et.commitState.activeState.Reconfigured {
