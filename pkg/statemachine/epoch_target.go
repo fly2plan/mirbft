@@ -876,8 +876,12 @@ func (et *epochTarget) moveLowWatermark(seqNo uint64) *ActionList {
 func (et *epochTarget) applySuspectMsg(source nodeID, msg *msgs.Suspect) {
 	var suspiciousNode nodeID
 	if msg.Context != nil {
-		highestCommittedSeqNo := msg.Context.SeqNo
-		suspiciousNode = et.activeEpoch.buckets[et.activeEpoch.seqToBucket(highestCommittedSeqNo)]
+		if et.activeEpoch != nil {
+			highestCommittedSeqNo := msg.Context.SeqNo
+			suspiciousNode = et.activeEpoch.buckets[et.activeEpoch.seqToBucket(highestCommittedSeqNo)]
+		} else {
+			return
+		}
 	} else {
 		suspiciousNode = nodeID(et.number % uint64(len(et.networkConfig.Nodes)))
 	}
