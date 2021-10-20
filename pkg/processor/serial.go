@@ -97,6 +97,7 @@ func IntializeWALForNewNode(
 
 	if initialSeqNo > 0 {
 		initialNetworkState.Reconfigured = true
+		previousEpochEndConfig.Number += 1
 	}
 
 	events := &statemachine.EventList{}
