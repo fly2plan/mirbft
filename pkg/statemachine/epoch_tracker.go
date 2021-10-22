@@ -183,20 +183,7 @@ func (et *epochTracker) reinitialize() *ActionList {
 			return actions.concat(et.currentEpoch.advanceState())
 		}
 
-		offset := uint64(0)
-		myPrimaryChoice := lastECEntry.EpochNumber % uint64(len(et.networkConfig.Nodes))
-		if myPrimaryChoice == 0 && et.networkConfig.Nodes[0] != 0 {
-			offset += 1
-			myPrimaryChoice = (lastECEntry.EpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
-		}
-		for et.networkConfig.Timeouts[myPrimaryChoice] != 0 || et.networkConfig.Loyalties[myPrimaryChoice] == -1 {
-			offset += 1
-			myPrimaryChoice = (lastECEntry.EpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
-			if myPrimaryChoice == 0 && et.networkConfig.Nodes[0] != 0 {
-				offset += 1
-				myPrimaryChoice = (lastECEntry.EpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
-			}
-		}
+		offset := et.newPrimaryOffset(lastECEntry.EpochNumber)
 
 		epochChange := et.persisted.constructEpochChange(lastECEntry.EpochNumber, offset)
 		parsedEpochChange, err := newParsedEpochChange(epochChange)
@@ -324,6 +311,59 @@ func (et *epochTracker) advanceState() *ActionList {
 
 	lastCheckpoint := myEpochChange.underlying.Checkpoints[len(myEpochChange.underlying.Checkpoints)-1]
 
+	if len(myEpochChange.underlying.Checkpoints) > 1 {
+		secondLastCheckpoint := myEpochChange.underlying.Checkpoints[len(myEpochChange.underlying.Checkpoints)-2]
+
+		if secondLastCheckpoint.SeqNo == lastCheckpoint.SeqNo &&
+			string(secondLastCheckpoint.Value) != string(lastCheckpoint.Value) {
+
+			offset := et.newPrimaryOffset(newEpochNumber)
+
+			epochChange = et.persisted.constructEpochChange(newEpochNumber, offset)
+
+			myEpochChange, err = newParsedEpochChange(epochChange)
+			assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
+
+			myLeaderChoice := et.currentEpoch.myLeaderChoice
+
+			et.currentEpoch = newEpochTarget(
+				newEpochNumber,
+				offset,
+				et.persisted,
+				et.nodeBuffers,
+				et.commitState,
+				et.clientTracker,
+				et.clientHashDisseminator,
+				et.batchTracker,
+				et.networkConfig,
+				et.myConfig,
+				et.logger,
+			)
+
+			et.currentEpoch.myEpochChange = myEpochChange
+			et.currentEpoch.myLeaderChoice = myLeaderChoice
+
+			actions.concat(et.persisted.addECEntry(&msgs.ECEntry{
+				EpochNumber: newEpochNumber,
+			}).Send(
+				et.networkConfig.Nodes,
+				&msgs.Msg{
+					Type: &msgs.Msg_EpochChange{
+						EpochChange: epochChange,
+					},
+				},
+			))
+
+			for _, id := range et.networkConfig.Nodes {
+				et.futureMsgs[nodeID(id)].iterate(et.filter, func(source nodeID, msg *msgs.Msg) {
+					actions.concat(et.applyMsg(source, msg))
+				})
+			}
+
+			return actions
+		}
+	}
+
 	graceful := false
 	if et.currentEpoch.activeEpoch != nil {
 		switch lastCheckpoint.SeqNo {
@@ -444,46 +484,15 @@ func (et *epochTracker) advanceState() *ActionList {
 		}
 	}
 
-	epochChange = et.persisted.constructEpochChange(newEpochNumber, offset)
-
-	myEpochChange, err = newParsedEpochChange(epochChange)
-	assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
-
-	et.currentEpoch = newEpochTarget(
-		newEpochNumber,
-		offset,
-		et.persisted,
-		et.nodeBuffers,
-		et.commitState,
-		et.clientTracker,
-		et.clientHashDisseminator,
-		et.batchTracker,
-		et.networkConfig,
-		et.myConfig,
-		et.logger,
-	)
-
-	et.currentEpoch.myEpochChange = myEpochChange
 	et.currentEpoch.myLeaderChoice = myLeaderChoice // XXX, wrong
 
-	actions.concat(et.persisted.addECEntry(&msgs.ECEntry{
-		EpochNumber: newEpochNumber,
-	}).Send(
-		et.networkConfig.Nodes,
-		&msgs.Msg{
-			Type: &msgs.Msg_EpochChange{
-				EpochChange: epochChange,
-			},
-		},
-	))
+	return actions.Checkpoint(
+		lastCheckpoint.SeqNo,
+		et.networkConfig,
+		et.clientTracker.clientStates,
+		et.currentEpoch.networkNewEpoch.Config,
+	)
 
-	for _, id := range et.networkConfig.Nodes {
-		et.futureMsgs[nodeID(id)].iterate(et.filter, func(source nodeID, msg *msgs.Msg) {
-			actions.concat(et.applyMsg(source, msg))
-		})
-	}
-
-	return actions
 }
 
 func epochForMsg(msg *msgs.Msg) uint64 {
@@ -634,6 +643,35 @@ func (et *epochTracker) applyEpochChangeDigest(origin *state.HashOrigin_EpochCha
 
 	}
 	return et.currentEpoch.applyEpochChangeDigest(origin, digest)
+}
+
+func (et *epochTracker) newPrimaryOffset(newEpochNumber uint64) uint64 {
+	offset := uint64(0)
+	myPrimaryChoice := newEpochNumber % uint64(len(et.networkConfig.Nodes))
+	if myPrimaryChoice == 0 && et.networkConfig.Nodes[0] != 0 {
+		offset += 1
+		myPrimaryChoice = (newEpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+	}
+	indexOfMyPrimaryChoice := 0
+	i := sort.Search(len(et.networkConfig.Nodes),
+		func(i int) bool { return et.networkConfig.Nodes[i] >= myPrimaryChoice })
+	if i < len(et.networkConfig.Nodes) && et.networkConfig.Nodes[i] == myPrimaryChoice {
+		indexOfMyPrimaryChoice = i
+	}
+	for et.networkConfig.Timeouts[indexOfMyPrimaryChoice] != 0 || et.networkConfig.Loyalties[indexOfMyPrimaryChoice] == -1 {
+		offset += 1
+		myPrimaryChoice = (newEpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+		if myPrimaryChoice == 0 && et.networkConfig.Nodes[0] != 0 {
+			offset += 1
+			myPrimaryChoice = (newEpochNumber + offset) % uint64(len(et.networkConfig.Nodes))
+		}
+		i = sort.Search(len(et.networkConfig.Nodes),
+			func(i int) bool { return et.networkConfig.Nodes[i] >= myPrimaryChoice })
+		if i < len(et.networkConfig.Nodes) && et.networkConfig.Nodes[i] == myPrimaryChoice {
+			indexOfMyPrimaryChoice = i
+		}
+	}
+	return offset
 }
 
 func (et *epochTracker) status() *status.EpochTracker {

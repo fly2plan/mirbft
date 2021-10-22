@@ -384,8 +384,16 @@ func (sm *StateMachine) processCheckpointResult(checkpointResult *state.EventChe
 		return actions
 	}
 
-	expectedSeqNo := sm.commitState.lowWatermark + uint64(sm.commitState.activeState.Config.CheckpointInterval)
-	assertEqual(expectedSeqNo, checkpointResult.SeqNo, "new checkpoint results muts be exactly one checkpoint interval after the last")
+	if sm.epochTracker.currentEpoch.state != etDone {
+		expectedSeqNo := sm.commitState.lowWatermark + uint64(sm.commitState.activeState.Config.CheckpointInterval)
+		assertEqual(expectedSeqNo, checkpointResult.SeqNo, "new checkpoint results muts be exactly one checkpoint interval after the last")
+	} else {
+		return sm.commitState.persisted.addCEntry(&msgs.CEntry{
+			SeqNo:           checkpointResult.SeqNo,
+			CheckpointValue: checkpointResult.Value,
+			NetworkState:    checkpointResult.NetworkState,
+		})
+	}
 
 	var epochConfig *msgs.EpochConfig
 	if sm.epochTracker.currentEpoch.activeEpoch != nil {
