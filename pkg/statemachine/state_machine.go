@@ -392,7 +392,17 @@ func (sm *StateMachine) processCheckpointResult(checkpointResult *state.EventChe
 			SeqNo:           checkpointResult.SeqNo,
 			CheckpointValue: checkpointResult.Value,
 			NetworkState:    checkpointResult.NetworkState,
-		})
+		}).Send(
+			sm.commitState.activeState.Config.Nodes,
+			&msgs.Msg{
+				Type: &msgs.Msg_Checkpoint{
+					Checkpoint: &msgs.Checkpoint{
+						SeqNo: checkpointResult.SeqNo,
+						Value: checkpointResult.Value,
+					},
+				},
+			},
+		).StateApplied(checkpointResult.SeqNo, checkpointResult.NetworkState)
 	}
 
 	var epochConfig *msgs.EpochConfig
