@@ -201,6 +201,11 @@ func (et *epochTarget) verifyNewEpochState() {
 
 	// TODO, do we need to try to validate the leader set?
 
+	// This node has to undergo state transfer
+	if et.myNewEpoch == nil {
+		et.state = etFetching
+	}
+
 	// Reconstruct the new epoch configuration based on the received information.
 	newEpochConfig := constructNewEpochConfig(et.networkConfig, et.leaderNewEpoch.NewConfig.Config.Leaders, epochChanges)
 

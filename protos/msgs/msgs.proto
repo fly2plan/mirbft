@@ -287,10 +287,17 @@ message Suspect {
 message EpochChange {
     uint64 new_epoch = 1;
     uint64 offset = 2;
+    message NetworkStatus {
+        repeated int64 loyalties = 1;
+        repeated uint64 timeouts = 2;
+        repeated uint64 leaders = 3;
+    }
+
+    NetworkStatus status = 3;
 
     // c_set contains the entries for the C-set as defined by the classical
     // PBFT view-change protocol.
-    repeated Checkpoint checkpoints = 3;
+    repeated Checkpoint checkpoints = 4;
 
     message SetEntry {
         uint64 epoch = 1;
@@ -300,11 +307,11 @@ message EpochChange {
 
     // p_set contains the entries for the P-set as defined by the classical
     // PBFT view-change protocol.  
-    repeated SetEntry p_set = 4;
+    repeated SetEntry p_set = 5;
 
     // q_set contains the entries for the Q-set as defined by the classical
     // PBFT view-change protocol.
-    repeated SetEntry q_set = 5;
+    repeated SetEntry q_set = 6;
 }
 
 // EpochChangeAck messages are broadcast in response to receiving a valid epoch change
@@ -328,9 +335,11 @@ message EpochConfig {
     // offset of this new epoch
     uint64 offset = 2;
 
-    repeated uint64 leaders = 3;
+    repeated int64 loyalties = 3;
+    repeated uint64 timeouts = 4;
+    repeated uint64 leaders = 5;
 
-    uint64 planned_expiration = 4;
+    uint64 planned_expiration = 6;
 }
 
 message NewEpochConfig {

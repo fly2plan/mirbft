@@ -199,6 +199,8 @@ func constructNewEpochConfig(config *msgs.NetworkState_Config, newLeaders []uint
 		Config: &msgs.EpochConfig{
 			Number:            newEpochNumber,
 			Offset:            offset,
+			Loyalties:         config.Loyalties,
+			Timeouts:          config.Timeouts,
 			Leaders:           newLeaders,
 			PlannedExpiration: maxCheckpoint.SeqNo + config.MaxEpochLength,
 		},
