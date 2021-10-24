@@ -206,6 +206,12 @@ func (et *epochTarget) verifyNewEpochState() {
 		et.state = etFetching
 	}
 
+	// If this node has a quorum of epoch changes yet its new epoch disagrees
+	// with the leader then this node should state transfer
+	if !proto.Equal(et.myNewEpoch.NewConfig, et.leaderNewEpoch.NewConfig) {
+		et.state = etFetching
+	}
+
 	// Reconstruct the new epoch configuration based on the received information.
 	newEpochConfig := constructNewEpochConfig(et.networkConfig, et.leaderNewEpoch.NewConfig.Config.Leaders, epochChanges)
 
