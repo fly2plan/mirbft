@@ -151,6 +151,17 @@ func (et *epochTracker) reinitialize() *ActionList {
 			et.currentEpoch.leaderNewEpoch = leaderNewEpoch
 			et.currentEpoch.networkConfig.Loyalties = leaderNewEpoch.NewConfig.Config.Loyalties
 			et.currentEpoch.networkConfig.Timeouts = leaderNewEpoch.NewConfig.Config.Timeouts
+			et.currentEpoch.offset = leaderNewEpoch.NewConfig.Config.Offset
+			epochChange := et.persisted.constructEpochChange(
+				lastECEntry.EpochNumber,
+				et.currentEpoch.offset,
+				et.networkConfig.Loyalties,
+				et.networkConfig.Timeouts,
+				leaderNewEpoch.NewConfig.Config.Leaders,
+			)
+			parsedEpochChange, err := newParsedEpochChange(epochChange)
+			assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
+			et.currentEpoch.myEpochChange = parsedEpochChange
 		}
 
 		startingSeqNo := highestPreprepared + 1
