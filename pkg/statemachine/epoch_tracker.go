@@ -440,7 +440,7 @@ func (et *epochTracker) advanceState() *ActionList {
 				myLeaderChoice = append(lastEpochConfig.Leaders, newLeaders...)
 				sort.Slice(myLeaderChoice, func(i, j int) bool { return myLeaderChoice[i] < myLeaderChoice[j] })
 			} else {
-				myLeaderChoice = et.currentEpoch.myLeaderChoice
+				myLeaderChoice = append(myLeaderChoice, et.currentEpoch.myLeaderChoice...)
 			}
 		}
 	} else {
@@ -482,6 +482,7 @@ func (et *epochTracker) advanceState() *ActionList {
 	)
 
 	et.currentEpoch.myEpochChange = myEpochChange
+	et.currentEpoch.myLeaderChoice = myLeaderChoice
 
 	actions.concat(et.persisted.addECEntry(&msgs.ECEntry{
 		EpochNumber: newEpochNumber,
