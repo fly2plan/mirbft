@@ -449,7 +449,7 @@ func (e *activeEpoch) tick() *ActionList {
 		suspect := &msgs.Suspect{
 			Epoch: e.epochConfig.Number,
 			Context: &msgs.Suspect_Context{
-				SeqNo: e.commitState.highestCommit,
+				SeqNo: e.commitState.highestCommit + 1,
 			},
 		}
 		actions.Send(e.networkConfig.Nodes, &msgs.Msg{
