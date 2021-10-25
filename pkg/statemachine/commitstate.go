@@ -124,6 +124,10 @@ func (cs *commitState) applyCheckpointResult(epochConfig *msgs.EpochConfig, resu
 		panic("dev sanity test -- this panic is helpful for dev, but needs to be removed as we could get stale checkpoint results")
 	}
 
+	if cs.stopAtSeqNo+uint64(cs.activeState.Config.CheckpointInterval) == cs.epochConfig.PlannedExpiration {
+		result.NetworkState.PendingReconfigurations = nil
+	}
+
 	if len(result.NetworkState.PendingReconfigurations) == 0 {
 		cs.stopAtSeqNo = result.SeqNo + 2*ci
 	} else {
