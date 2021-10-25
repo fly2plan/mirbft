@@ -128,7 +128,7 @@ func (et *epochTracker) reinitialize() *ActionList {
 	case lastNEntry != nil && (lastECEntry == nil || lastECEntry.EpochNumber <= lastNEntry.EpochConfig.Number):
 		et.logger.Log(LevelDebug, "reinitializing during a currently active epoch")
 
-		leaderNewEpoch := &msgs.NewEpoch{}
+		var leaderNewEpoch *msgs.NewEpoch
 		if et.currentEpoch != nil && et.currentEpoch.leaderNewEpoch != nil {
 			leaderNewEpoch = et.currentEpoch.leaderNewEpoch
 		}
