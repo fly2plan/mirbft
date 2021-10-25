@@ -328,11 +328,6 @@ func (et *epochTracker) advanceState() *ActionList {
 		return actions
 	}
 
-	if et.currentEpoch.myEpochChange == nil {
-		et.currentEpoch.state = etResuming
-		return actions
-	}
-
 	newEpochNumber := et.currentEpoch.number + 1
 	if et.maxCorrectEpoch > newEpochNumber {
 		newEpochNumber = et.maxCorrectEpoch
