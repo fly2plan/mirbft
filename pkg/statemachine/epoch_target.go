@@ -842,6 +842,8 @@ func (et *epochTarget) advanceState() *ActionList {
 			et.activeEpoch = newActiveEpoch(et.networkNewEpoch.Config, et.persisted, et.nodeBuffers, et.commitState, et.clientTracker, et.myConfig, et.logger)
 
 			et.commitState.epochConfig = et.activeEpoch.epochConfig
+			et.commitState.activeState.Config.Loyalties = et.commitState.epochConfig.Loyalties
+			et.commitState.activeState.Config.Timeouts = et.commitState.epochConfig.Timeouts
 
 			actions.concat(et.activeEpoch.advance())
 
