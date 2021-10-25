@@ -47,6 +47,9 @@ func newActiveEpoch(epochConfig *msgs.EpochConfig, persisted *persisted, nodeBuf
 	startingSeqNo := commitState.highestCommit
 
 	logger.Log(LevelInfo, "starting new active epoch", "epoch_no", epochConfig.Number, "offset", epochConfig.Offset, "seq_no", startingSeqNo)
+	logger.Log(LevelInfo, "loyalties: %v", networkConfig.Loyalties)
+	logger.Log(LevelInfo, "timeouts: %v", networkConfig.Timeouts)
+	logger.Log(LevelInfo, "leaders: %v", epochConfig.Leaders)
 
 	outstandingReqs := newOutstandingReqs(clientTracker, commitState.activeState, logger)
 
