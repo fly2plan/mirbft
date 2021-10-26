@@ -381,7 +381,7 @@ func (et *epochTracker) advanceState() *ActionList {
 				} else {
 					// TODO(harrymknight) Make the deducted amount and timeout duration configurable
 					et.networkConfig.Loyalties[i] -= 100
-					et.networkConfig.Timeouts[i] += 10
+					et.networkConfig.Timeouts[i] += 5
 				}
 			}
 
