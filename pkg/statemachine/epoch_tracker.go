@@ -187,6 +187,8 @@ func (et *epochTracker) reinitialize() *ActionList {
 			},
 		})
 
+		et.needsStateTransfer = false
+
 	case lastFEntry != nil && (lastECEntry == nil || lastECEntry.EpochNumber <= lastFEntry.EndsEpochConfig.Number):
 		et.logger.Log(LevelDebug, "reinitializing immediately after graceful epoch end, but before epoch change sent, creating epoch change")
 		// An epoch has just gracefully ended, and we have not yet tried to move to the next
