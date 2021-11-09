@@ -437,6 +437,7 @@ func (et *epochTracker) advanceState() *ActionList {
 					isLoyal = false
 				}
 				if et.networkConfig.Timeouts[i] > 0 {
+					et.networkConfig.Timeouts[i] -= 1
 					isLoyal = false
 				}
 				if isLoyal {
