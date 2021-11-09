@@ -147,6 +147,8 @@ func (et *epochTracker) reinitialize() *ActionList {
 			et.logger,
 		)
 
+		et.currentEpoch.commitState.epochConfig = lastNEntry.EpochConfig
+
 		if leaderNewEpoch != nil {
 			et.currentEpoch.leaderNewEpoch = leaderNewEpoch
 			et.currentEpoch.networkConfig.Loyalties = leaderNewEpoch.NewConfig.Config.Loyalties
