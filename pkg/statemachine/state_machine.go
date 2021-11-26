@@ -98,6 +98,7 @@ const (
 // be allocated via StartNode.
 type StateMachine struct {
 	Logger Logger
+	StartC chan struct{}
 
 	state stateMachineState
 
@@ -279,7 +280,10 @@ func (sm *StateMachine) applyEvent(stateEvent *state.Event) *ActionList {
 // the clientTracker retains in-window ACKs for still-extant clients.  The checkpointTracker
 // retains checkpoint messages sent by other replicas, etc.
 func (sm *StateMachine) reinitialize() *ActionList {
-	defer sm.Logger.Log(LevelInfo, "state machine reinitialized (either due to start, state transfer, or reconfiguration)")
+	defer func() {
+		sm.Logger.Log(LevelInfo, "state machine reinitialized (either due to start, state transfer, or reconfiguration)")
+		sm.StartC <- struct{}{}
+	}()
 
 	actions := sm.recoverLog()
 	actions.concat(sm.commitState.reinitialize())

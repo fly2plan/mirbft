@@ -83,6 +83,7 @@ type Node struct {
 	workItems       *processor.WorkItems
 	workErrNotifier *workErrNotifier
 
+	startC           chan struct{}
 	statusC          chan chan *status.StateMachine
 	walActionsC      chan *statemachine.ActionList
 	walResultsC      chan *statemachine.ActionList
@@ -138,6 +139,7 @@ func NewNode(
 	id uint64,
 	config *Config,
 	processorConfig *ProcessorConfig,
+	startC chan struct{},
 ) (*Node, error) {
 	return &Node{
 		ID:              id,
@@ -148,6 +150,7 @@ func NewNode(
 			eventC: make(chan *statemachine.EventList),
 		},
 		stateMachine: &statemachine.StateMachine{
+			StartC: startC,
 			Logger: logAdapter{Logger: config.Logger},
 		},
 		clients: &processor.Clients{
