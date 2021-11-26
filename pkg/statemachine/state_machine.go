@@ -282,7 +282,7 @@ func (sm *StateMachine) applyEvent(stateEvent *state.Event) *ActionList {
 func (sm *StateMachine) reinitialize() *ActionList {
 	defer func() {
 		sm.Logger.Log(LevelInfo, "state machine reinitialized (either due to start, state transfer, or reconfiguration)")
-		sm.StartC <- struct{}{}
+		close(sm.StartC)
 	}()
 
 	actions := sm.recoverLog()
