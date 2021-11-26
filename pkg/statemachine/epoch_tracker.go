@@ -189,6 +189,7 @@ func (et *epochTracker) reinitialize() *ActionList {
 			},
 		})
 
+		et.currentEpoch.isOldState = true
 		et.needsStateTransfer = false
 
 	case lastFEntry != nil && (lastECEntry == nil || lastECEntry.EpochNumber <= lastFEntry.EndsEpochConfig.Number):

@@ -57,6 +57,7 @@ type epochTarget struct {
 	leaderNewEpoch  *msgs.NewEpoch       // The NewEpoch msg we received directly from the leader
 	networkNewEpoch *msgs.NewEpochConfig // The NewEpoch msg as received via the bracha broadcast
 	isPrimary       bool
+	isOldState      bool
 	prestartBuffers map[nodeID]*msgBuffer
 
 	persisted              *persisted
@@ -206,9 +207,9 @@ func (et *epochTarget) verifyNewEpochState() {
 		et.state = etFetching
 	}
 
-	// If this node has a quorum of epoch changes yet its new epoch disagrees
-	// with the leader then this node should state transfer
-	if !proto.Equal(et.myNewEpoch.NewConfig, et.leaderNewEpoch.NewConfig) {
+	// If this node reinitialised during an active epoch then it crashed
+	// and must optimistically assume that the leader is well behaved
+	if et.isOldState {
 		et.state = etFetching
 	}
 
@@ -235,8 +236,9 @@ func (et *epochTarget) fetchNewEpochState() *ActionList {
 		return &ActionList{}
 	}
 
-	if newEpochConfig.StartingCheckpoint.SeqNo > et.commitState.highestCommit {
+	if et.isOldState || newEpochConfig.StartingCheckpoint.SeqNo > et.commitState.highestCommit {
 		et.logger.Log(LevelDebug, "delaying fetching of epoch state until outstanding checkpoint is computed", "epoch_no", et.number, "seq_no", newEpochConfig.StartingCheckpoint.SeqNo)
+		et.isOldState = false
 		return et.commitState.transferTo(newEpochConfig.StartingCheckpoint.SeqNo, newEpochConfig.StartingCheckpoint.Value)
 	}
 
@@ -839,7 +841,7 @@ func (et *epochTarget) advanceState() *ActionList {
 			et.checkEpochResumed()
 		case etReady: // New epoch is ready to begin
 			// TODO, handle case where planned epoch expiration is now
-			et.activeEpoch = newActiveEpoch(et.networkNewEpoch.Config, et.persisted, et.nodeBuffers, et.commitState, et.clientTracker, et.myConfig, et.logger)
+			et.activeEpoch = newActiveEpoch(et.leaderNewEpoch.NewConfig.Config, et.persisted, et.nodeBuffers, et.commitState, et.clientTracker, et.myConfig, et.logger)
 
 			et.commitState.epochConfig = et.activeEpoch.epochConfig
 			et.commitState.activeState.Config.Loyalties = et.commitState.epochConfig.Loyalties
