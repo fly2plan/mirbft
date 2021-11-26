@@ -29,13 +29,15 @@ func (cs *Clients) Client(clientID uint64) *Client {
 
 	c, ok := cs.clients[clientID]
 	if !ok {
-		c = newClient(clientID, cs.Hasher, cs.RequestStore)
+		c = newClient(clientID, cs.Hasher, cs.RequestStore, cs.StartC)
 		cs.clients[clientID] = c
 	}
 	return c
 }
 
 type Clients struct {
+	StartC chan struct{}
+
 	Hasher       Hasher
 	RequestStore RequestStore
 
@@ -85,6 +87,7 @@ func (c *Clients) ProcessClientActions(actions *statemachine.ActionList) (*state
 // TODO, client needs to be updated based on the state applied events, to give it a low watermark
 // minimally and to clean up the reqNoMap
 type Client struct {
+	startC       chan struct{}
 	mutex        sync.Mutex
 	hasher       Hasher
 	clientID     uint64
@@ -94,8 +97,9 @@ type Client struct {
 	reqNoMap     map[uint64]*list.Element
 }
 
-func newClient(clientID uint64, hasher Hasher, reqStore RequestStore) *Client {
+func newClient(clientID uint64, hasher Hasher, reqStore RequestStore, startC chan struct{}) *Client {
 	return &Client{
+		startC:       startC,
 		clientID:     clientID,
 		hasher:       hasher,
 		requestStore: reqStore,
@@ -177,6 +181,7 @@ func (c *Client) addCorrectDigest(reqNo uint64, digest []byte) error {
 }
 
 func (c *Client) NextReqNo() (uint64, error) {
+	<-c.startC
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	if c.requests.Len() == 0 {
@@ -187,6 +192,7 @@ func (c *Client) NextReqNo() (uint64, error) {
 }
 
 func (c *Client) Propose(reqNo uint64, data []byte) (*statemachine.EventList, error) {
+	<-c.startC
 	h := c.hasher.New()
 	h.Write(data)
 	digest := h.Sum(nil)

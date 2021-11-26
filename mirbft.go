@@ -154,6 +154,7 @@ func NewNode(
 			Logger: logAdapter{Logger: config.Logger},
 		},
 		clients: &processor.Clients{
+			StartC:       startC,
 			RequestStore: processorConfig.RequestStore,
 			Hasher:       processorConfig.Hasher,
 		},
