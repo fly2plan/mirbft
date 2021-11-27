@@ -473,6 +473,11 @@ func (et *epochTracker) advanceState() *ActionList {
 	myEpochChange, err = newParsedEpochChange(epochChange)
 	assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
 
+	isOldState := false
+	if et.currentEpoch.isOldState {
+		isOldState = true
+	}
+
 	et.currentEpoch = newEpochTarget(
 		newEpochNumber,
 		offset,
@@ -489,6 +494,7 @@ func (et *epochTracker) advanceState() *ActionList {
 
 	et.currentEpoch.myEpochChange = myEpochChange
 	et.currentEpoch.myLeaderChoice = myLeaderChoice
+	et.currentEpoch.isOldState = isOldState
 
 	actions.concat(et.persisted.addECEntry(&msgs.ECEntry{
 		EpochNumber: newEpochNumber,
