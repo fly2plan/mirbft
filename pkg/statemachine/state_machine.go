@@ -282,7 +282,11 @@ func (sm *StateMachine) applyEvent(stateEvent *state.Event) *ActionList {
 func (sm *StateMachine) reinitialize() *ActionList {
 	defer func() {
 		sm.Logger.Log(LevelInfo, "state machine reinitialized (either due to start, state transfer, or reconfiguration)")
-		close(sm.StartC)
+		select {
+		case <-sm.StartC:
+		default:
+			close(sm.StartC)
+		}
 	}()
 
 	actions := sm.recoverLog()
