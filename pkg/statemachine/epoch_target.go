@@ -601,7 +601,7 @@ func (et *epochTarget) checkEpochQuorum() *ActionList {
 	et.state = etPending
 
 	// If this node is the primary, send the NewEpoch message to all others.
-	if et.isPrimary {
+	if !et.isOldState && et.isPrimary {
 		return (&ActionList{}).Send(
 			et.networkConfig.Nodes,
 			&msgs.Msg{
