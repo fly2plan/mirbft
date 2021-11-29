@@ -397,7 +397,23 @@ func (et *epochTracker) advanceState() *ActionList {
 				}
 			}
 		} else {
-			// Otherwise attempt to expand the leader set on graceful epoch end
+			// If a node has been too traitorous or is in
+			// timeout ignore it, otherwise increment its loyalty
+			for i := range et.networkConfig.Nodes {
+				isLoyal := true
+				if et.networkConfig.Loyalties[i] == -1 {
+					isLoyal = false
+				}
+				if et.networkConfig.Timeouts[i] > 0 {
+					et.networkConfig.Timeouts[i] -= 1
+					isLoyal = false
+				}
+				if isLoyal {
+					et.networkConfig.Loyalties[i] += 1
+				}
+			}
+
+			// Attempt to expand the leader set on graceful epoch end
 			if len(lastEpochConfig.Leaders) < len(et.networkConfig.Nodes) {
 				potentialLeaders := make([]uint64, len(et.networkConfig.Nodes))
 				copy(potentialLeaders, et.networkConfig.Nodes)
@@ -431,23 +447,6 @@ func (et *epochTracker) advanceState() *ActionList {
 			} else {
 				myLeaderChoice = append(myLeaderChoice, et.currentEpoch.myLeaderChoice...)
 			}
-
-			// If a node has been too traitorous or is in
-			// timeout ignore it, otherwise increment its loyalty
-			for i := range et.networkConfig.Nodes {
-				isLoyal := true
-				if et.networkConfig.Loyalties[i] == -1 {
-					isLoyal = false
-				}
-				if et.networkConfig.Timeouts[i] > 0 {
-					et.networkConfig.Timeouts[i] -= 1
-					isLoyal = false
-				}
-				if isLoyal {
-					et.networkConfig.Loyalties[i] += 1
-				}
-			}
-
 		}
 	} else {
 		currentLeaders := et.currentEpoch.myLeaderChoice
