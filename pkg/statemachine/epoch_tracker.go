@@ -313,7 +313,6 @@ func (et *epochTracker) reinitialize() *ActionList {
 		et.currentEpoch.offset = et.currentEpoch.leaderNewEpoch.NewConfig.Config.Offset
 
 		et.networkConfig = et.currentEpoch.networkConfig
-		et.commitState.activeState.Config = et.networkConfig
 
 		epochChange := et.persisted.constructEpochChange(
 			lastECEntry.EpochNumber,
