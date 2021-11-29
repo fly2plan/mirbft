@@ -124,14 +124,23 @@ func (et *epochTracker) reinitialize() *ActionList {
 		panic("no active epoch and no last epoch in log")
 	}
 
+	isOldState := false
+	isUnknownState := false
+	isCorrectState := false
+	if et.currentEpoch != nil {
+		isOldState = et.currentEpoch.isOldState
+		isUnknownState = et.currentEpoch.isUnknownState
+		isCorrectState = et.currentEpoch.isCorrectState
+	}
+
+	var leaderNewEpoch *msgs.NewEpoch
+	if et.currentEpoch != nil && et.currentEpoch.leaderNewEpoch != nil {
+		leaderNewEpoch = et.currentEpoch.leaderNewEpoch
+	}
+
 	switch {
 	case lastNEntry != nil && (lastECEntry == nil || lastECEntry.EpochNumber <= lastNEntry.EpochConfig.Number):
 		et.logger.Log(LevelDebug, "reinitializing during a currently active epoch")
-
-		var leaderNewEpoch *msgs.NewEpoch
-		if et.currentEpoch != nil && et.currentEpoch.leaderNewEpoch != nil {
-			leaderNewEpoch = et.currentEpoch.leaderNewEpoch
-		}
 
 		et.currentEpoch = newEpochTarget(
 			lastNEntry.EpochConfig.Number,
@@ -148,23 +157,6 @@ func (et *epochTracker) reinitialize() *ActionList {
 		)
 
 		et.currentEpoch.commitState.epochConfig = lastNEntry.EpochConfig
-
-		if leaderNewEpoch != nil {
-			et.currentEpoch.leaderNewEpoch = leaderNewEpoch
-			et.currentEpoch.networkConfig.Loyalties = leaderNewEpoch.NewConfig.Config.Loyalties
-			et.currentEpoch.networkConfig.Timeouts = leaderNewEpoch.NewConfig.Config.Timeouts
-			et.currentEpoch.offset = leaderNewEpoch.NewConfig.Config.Offset
-			epochChange := et.persisted.constructEpochChange(
-				lastECEntry.EpochNumber,
-				et.currentEpoch.offset,
-				et.networkConfig.Loyalties,
-				et.networkConfig.Timeouts,
-				leaderNewEpoch.NewConfig.Config.Leaders,
-			)
-			parsedEpochChange, err := newParsedEpochChange(epochChange)
-			assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
-			et.currentEpoch.myEpochChange = parsedEpochChange
-		}
 
 		startingSeqNo := highestPreprepared + 1
 		for startingSeqNo%uint64(et.networkConfig.CheckpointInterval) != 1 {
@@ -189,7 +181,10 @@ func (et *epochTracker) reinitialize() *ActionList {
 			},
 		})
 
-		et.currentEpoch.isOldState = true
+		if !et.currentEpoch.isUnknownState && !et.currentEpoch.isCorrectState {
+			isOldState = true
+		}
+
 		et.needsStateTransfer = false
 
 	case lastFEntry != nil && (lastECEntry == nil || lastECEntry.EpochNumber <= lastFEntry.EndsEpochConfig.Number):
@@ -305,6 +300,28 @@ func (et *epochTracker) reinitialize() *ActionList {
 	default:
 		// There's no active epoch, it did not end gracefully, or ungracefully
 		panic("no recorded active epoch, ended epoch, or epoch change in log")
+	}
+
+	et.currentEpoch.isUnknownState = isUnknownState
+	et.currentEpoch.isCorrectState = isCorrectState
+	et.currentEpoch.isOldState = isOldState
+
+	if et.currentEpoch.isUnknownState && leaderNewEpoch != nil {
+		et.currentEpoch.leaderNewEpoch = leaderNewEpoch
+		et.currentEpoch.networkConfig.Loyalties = et.currentEpoch.leaderNewEpoch.NewConfig.Config.Loyalties
+		et.currentEpoch.networkConfig.Timeouts = et.currentEpoch.leaderNewEpoch.NewConfig.Config.Timeouts
+		et.currentEpoch.offset = et.currentEpoch.leaderNewEpoch.NewConfig.Config.Offset
+		et.networkConfig = et.currentEpoch.networkConfig
+		epochChange := et.persisted.constructEpochChange(
+			lastECEntry.EpochNumber,
+			et.currentEpoch.offset,
+			et.currentEpoch.networkConfig.Loyalties,
+			et.currentEpoch.networkConfig.Timeouts,
+			et.currentEpoch.leaderNewEpoch.NewConfig.Config.Leaders,
+		)
+		parsedEpochChange, err := newParsedEpochChange(epochChange)
+		assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
+		et.currentEpoch.myEpochChange = parsedEpochChange
 	}
 
 	for _, id := range et.networkConfig.Nodes {
@@ -472,10 +489,9 @@ func (et *epochTracker) advanceState() *ActionList {
 	myEpochChange, err = newParsedEpochChange(epochChange)
 	assertEqualf(err, nil, "could not parse epoch change we generated: %s", err)
 
-	isOldState := false
-	if et.currentEpoch.isOldState {
-		isOldState = true
-	}
+	isOldState := et.currentEpoch.isOldState
+	isUnknownState := et.currentEpoch.isUnknownState
+	isCorrectState := et.currentEpoch.isCorrectState
 
 	et.currentEpoch = newEpochTarget(
 		newEpochNumber,
@@ -493,7 +509,15 @@ func (et *epochTracker) advanceState() *ActionList {
 
 	et.currentEpoch.myEpochChange = myEpochChange
 	et.currentEpoch.myLeaderChoice = myLeaderChoice
+
 	et.currentEpoch.isOldState = isOldState
+	et.currentEpoch.isUnknownState = isUnknownState
+	et.currentEpoch.isCorrectState = isCorrectState
+
+	if et.currentEpoch.isUnknownState {
+		et.currentEpoch.isOldState = true
+		et.currentEpoch.isUnknownState = false
+	}
 
 	actions.concat(et.persisted.addECEntry(&msgs.ECEntry{
 		EpochNumber: newEpochNumber,

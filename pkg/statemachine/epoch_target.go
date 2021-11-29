@@ -58,6 +58,8 @@ type epochTarget struct {
 	networkNewEpoch *msgs.NewEpochConfig // The NewEpoch msg as received via the bracha broadcast
 	isPrimary       bool
 	isOldState      bool
+	isUnknownState  bool
+	isCorrectState  bool
 	prestartBuffers map[nodeID]*msgBuffer
 
 	persisted              *persisted
@@ -239,6 +241,8 @@ func (et *epochTarget) fetchNewEpochState() *ActionList {
 	if et.isOldState || newEpochConfig.StartingCheckpoint.SeqNo > et.commitState.highestCommit {
 		et.logger.Log(LevelDebug, "delaying fetching of epoch state until outstanding checkpoint is computed", "epoch_no", et.number, "seq_no", newEpochConfig.StartingCheckpoint.SeqNo)
 		et.isOldState = false
+		et.isUnknownState = true
+		et.isCorrectState = false
 		return et.commitState.transferTo(newEpochConfig.StartingCheckpoint.SeqNo, newEpochConfig.StartingCheckpoint.Value)
 	}
 
@@ -846,6 +850,10 @@ func (et *epochTarget) advanceState() *ActionList {
 			et.commitState.epochConfig = et.activeEpoch.epochConfig
 			et.commitState.activeState.Config.Loyalties = et.commitState.epochConfig.Loyalties
 			et.commitState.activeState.Config.Timeouts = et.commitState.epochConfig.Timeouts
+
+			et.isOldState = false
+			et.isUnknownState = false
+			et.isCorrectState = true
 
 			actions.concat(et.activeEpoch.advance())
 
