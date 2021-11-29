@@ -311,7 +311,10 @@ func (et *epochTracker) reinitialize() *ActionList {
 		et.currentEpoch.networkConfig.Loyalties = et.currentEpoch.leaderNewEpoch.NewConfig.Config.Loyalties
 		et.currentEpoch.networkConfig.Timeouts = et.currentEpoch.leaderNewEpoch.NewConfig.Config.Timeouts
 		et.currentEpoch.offset = et.currentEpoch.leaderNewEpoch.NewConfig.Config.Offset
+
 		et.networkConfig = et.currentEpoch.networkConfig
+		et.commitState.activeState.Config = et.networkConfig
+
 		epochChange := et.persisted.constructEpochChange(
 			lastECEntry.EpochNumber,
 			et.currentEpoch.offset,
