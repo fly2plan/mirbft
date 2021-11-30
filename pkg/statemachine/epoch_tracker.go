@@ -668,6 +668,9 @@ func (et *epochTracker) tick() *ActionList {
 
 		// TODO make this configurable
 		if et.ticksOutOfCorrectEpoch > 10 {
+			et.currentEpoch.isOldState = true
+			et.currentEpoch.isUnknownState = false
+			et.currentEpoch.isCorrectState = false
 			et.currentEpoch.state = etDone
 		}
 	}
